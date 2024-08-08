@@ -1,61 +1,62 @@
-import streamlit as st
-import google.generativeai as genai
 import os
+from litellm import completion
+import json
 
-def setup_gemini(api_key):
-    """Configure Gemini settings."""
-    os.environ['GOOGLE_API_KEY'] = api_key
-    genai.configure(api_key=api_key)
-    return genai.GenerativeModel('gemini-1.5-pro')
+def setup_environment(api_key):
+    """Set up the environment with the API key."""
+    os.environ['GEMINI_API_KEY'] = api_key
 
-def chat_with_gemini(model, message, chat_history):
-    """Generate a response from Gemini based on the chat history and new message."""
-    messages = [
-        {'role': 'user' if msg['role'] == 'user' else 'model', 'parts': [msg['content']]}
-        for msg in chat_history
-    ]
-    messages.append({'role': 'user', 'parts': [message]})
+def generate_response(prompt, conversation_history):
+    """Generate a response using Gemini via LiteLLM."""
+    messages = conversation_history + [{"role": "user", "content": prompt}]
     
-    response = model.generate_content(messages, stream=True)
-    return response
-
-def main():
-    st.title("Gemini Chat Application")
-
-    # Sidebar for API key input
-    api_key = st.sidebar.text_input("Enter your Google AI API Key:", type="password")
+    response = completion(
+        model="gemini/gemini-1.5-pro",
+        messages=messages,
+        stream=True
+    )
     
-    if not api_key:
-        st.warning("Please enter your Google AI API Key in the sidebar to start chatting.")
-        return
+    full_response = ""
+    for chunk in response:
+        if chunk.choices[0].delta.content is not None:
+            full_response += chunk.choices[0].delta.content
+            print(chunk.choices[0].delta.content, end='', flush=True)
+    print()  # New line after full response
+    
+    return full_response
 
-    # Initialize Gemini model
-    model = setup_gemini(api_key)
+def execute_code(code):
+    """Execute the generated Python code."""
+    try:
+        exec(code, globals())
+    except Exception as e:
+        print(f"Error executing code: {str(e)}")
 
-    # Initialize chat history
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-
-    # Display chat messages
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-
-    # User input
-    if prompt := st.chat_input("What would you like to know?"):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
-
-        # Generate Gemini response
-        with st.chat_message("assistant"):
-            message_placeholder = st.empty()
-            full_response = ""
-            for chunk in chat_with_gemini(model, prompt, st.session_state.messages):
-                full_response += chunk.text
-                message_placeholder.markdown(full_response + "▌")
-            message_placeholder.markdown(full_response)
-        st.session_state.messages.append({"role": "assistant", "content": full_response})
+def interpreter_loop():
+    """Main interpreter loop."""
+    conversation_history = []
+    
+    while True:
+        user_input = input("You: ")
+        if user_input.lower() in ['exit', 'quit']:
+            break
+        
+        response = generate_response(user_input, conversation_history)
+        conversation_history.append({"role": "user", "content": user_input})
+        conversation_history.append({"role": "assistant", "content": response})
+        
+        # Check if the response contains Python code
+        if "```python" in response:
+            code_blocks = response.split("```python")
+            for block in code_blocks[1:]:
+                code = block.split("```")[0].strip()
+                print("\nExecuting code:")
+                print(code)
+                print("\nOutput:")
+                execute_code(code)
 
 if __name__ == "__main__":
-    main()
+    api_key = input("Enter your Gemini API Key: ")
+    setup_environment(api_key)
+    print("Gemini Code Interpreter initialized. Type 'exit' or 'quit' to end the session.")
+    interpreter_loop()
