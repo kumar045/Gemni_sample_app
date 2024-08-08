@@ -3,6 +3,7 @@ import google.generativeai as genai
 from PIL import Image
 import io
 import re
+import json
 
 def initialize_gemini_client(api_key):
     """Initialize the Google Gemini client with the provided API key."""
@@ -10,17 +11,21 @@ def initialize_gemini_client(api_key):
     return genai.GenerativeModel(model_name="gemini-1.5-pro-exp-0801")
 
 def generate_component(model, prompt, image=None):
-    """Generate a simple CSS component based on the prompt and/or image."""
+    """Generate a React component based on the prompt and/or image."""
     chat_session = model.start_chat(history=[])
     
     full_prompt = f"""
-    Create a UI component based on the following description:
+    Create a React functional component based on the following description:
     {prompt}
     
-    Please provide the component as a complete HTML structure with a separate <style> section for CSS.
-    Use simple, clean CSS without any framework dependencies.
-    Ensure the component is self-contained and can be rendered directly in a browser.
-    Include comments in the CSS to explain the styling choices.
+    Please provide the component as a complete React functional component using hooks if necessary.
+    Use inline styles or a separate styles object for CSS.
+    Ensure the component is self-contained and can be rendered directly.
+    Include comments to explain the component structure and any complex logic.
+    
+    Format the response as a JSON object with two keys:
+    1. "component": The full React component code as a string.
+    2. "explanation": A brief explanation of the component's functionality and any notes on usage.
     """
     
     if image:
@@ -28,23 +33,13 @@ def generate_component(model, prompt, image=None):
     else:
         response = chat_session.send_message(full_prompt)
     
-    return response.text
-
-def extract_html_and_css(generated_code):
-    """Extract HTML and CSS from the generated code."""
-    html_pattern = r'<body.*?>([\s\S]*?)<\/body>'
-    css_pattern = r'<style>([\s\S]*?)<\/style>'
-
-    html_match = re.search(html_pattern, generated_code, re.DOTALL)
-    css_match = re.search(css_pattern, generated_code, re.DOTALL)
-
-    html = html_match.group(1) if html_match else generated_code
-    css = css_match.group(1) if css_match else ""
-
-    return html, css
+    try:
+        return json.loads(response.text)
+    except json.JSONDecodeError:
+        return {"component": response.text, "explanation": "Unable to parse explanation."}
 
 def main():
-    st.title("Simple CSS Component Generator")
+    st.title("React Component Generator")
 
     # Input for API key
     api_key = st.text_input("Enter your Google Gemini API Key:", type="password")
@@ -78,21 +73,25 @@ def main():
                 return
 
             # Display the generated code
-            st.subheader("Generated Code:")
-            st.code(result, language="html")
+            st.subheader("Generated React Component:")
+            st.code(result["component"], language="jsx")
 
-            # Extract and display the component
-            html, css = extract_html_and_css(result)
-            if html:
-                st.subheader("Generated Component:")
-                st.components.v1.html(f"""
-                    <style>
-                    {css}
-                    </style>
-                    {html}
-                """, height=400, scrolling=True)
-            else:
-                st.warning("Couldn't extract valid HTML from the generated code.")
+            # Display the explanation
+            st.subheader("Component Explanation:")
+            st.write(result["explanation"])
+
+            # Render the React component
+            st.subheader("Generated UI:")
+            st.components.v1.html(f"""
+                <div id="react-root"></div>
+                <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+                <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+                <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+                <script type="text/babel">
+                    {result["component"]}
+                    ReactDOM.render(<Component />, document.getElementById('react-root'));
+                </script>
+            """, height=400, scrolling=True)
 
 if __name__ == "__main__":
     main()
