@@ -4,7 +4,7 @@ import sys
 import re
 from streamlit.components.v1 import html
 from streamlit_extras.add_vertical_space import add_vertical_space
-import interpreter  # Ensure this module is configured to use Gemini
+from interpreter import interpreter  # Ensure this module is configured to use Gemini
 
 # Initialize session state variables if not already present
 if 'Gemini_api_key' not in st.session_state:
