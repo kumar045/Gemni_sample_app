@@ -13,22 +13,31 @@ def generate_component(model, prompt, image=None):
     """Generate a Tailwind CSS component based on the prompt and/or image."""
     chat_session = model.start_chat(history=[])
     
+    full_prompt = f"""
+    Create a Tailwind CSS component based on the following description:
+    {prompt}
+    
+    Please provide the component as a complete HTML structure with inline Tailwind classes.
+    Also include any necessary custom CSS within a <style> tag.
+    Ensure the component is self-contained and can be rendered directly in a browser.
+    """
+    
     if image:
-        response = chat_session.send_message([prompt, image])
+        response = chat_session.send_message([full_prompt, image])
     else:
-        response = chat_session.send_message(prompt)
+        response = chat_session.send_message(full_prompt)
     
     return response.text
 
 def extract_html_and_css(generated_code):
     """Extract HTML and CSS from the generated code."""
-    html_pattern = r'<div.*?>([\s\S]*?)<\/div>'
+    html_pattern = r'<body.*?>([\s\S]*?)<\/body>'
     css_pattern = r'<style>([\s\S]*?)<\/style>'
 
     html_match = re.search(html_pattern, generated_code, re.DOTALL)
     css_match = re.search(css_pattern, generated_code, re.DOTALL)
 
-    html = html_match.group(0) if html_match else ""
+    html = html_match.group(1) if html_match else generated_code
     css = css_match.group(1) if css_match else ""
 
     return html, css
@@ -73,16 +82,16 @@ def main():
 
             # Extract and display the component
             html, css = extract_html_and_css(result)
-            if html and css:
+            if html:
                 st.subheader("Generated Component:")
-                st.markdown(f"""
+                st.components.v1.html(f"""
                     <style>
                     {css}
                     </style>
                     {html}
-                """, unsafe_allow_html=True)
+                """, height=400, scrolling=True)
             else:
-                st.warning("Couldn't extract valid HTML and CSS from the generated code.")
+                st.warning("Couldn't extract valid HTML from the generated code.")
 
 if __name__ == "__main__":
     main()
