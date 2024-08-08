@@ -21,7 +21,7 @@ def submit(api_key):
     try:
         # Update interpreter with API key and initialize
         interpreter.llm.api_key = api_key
-        interpreter.model = "gemini/gemini-1.5-pro"  # Set the Gemini model
+        interpreter.model = "gemini-1.5-pro"  # Set the Gemini model
         interpreter.auto_run = True
         
         # Test API key (this is a placeholder; adjust as needed for Gemini)
@@ -50,7 +50,7 @@ if prompt := st.chat_input(placeholder="Write here your message", disabled=not a
     st.session_state['messages'].append({"role": "user", "content": prompt})
 
     # Process AI response
-    interpreter.model = "gemini/gemini-1.5-pro"
+    interpreter.model = "gemini-1.5-pro"
     interpreter.auto_run = True
     full_response = ""
     codeb = True
