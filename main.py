@@ -43,37 +43,6 @@ with st.sidebar:
 
     st.text_input('Gemini API Key', key='widget', on_change=submit, type="password")
 
-    # Additional sidebar content
-    add_vertical_space(29)
-    st.markdown(
-        '<center><h5>🤗 Support the project with a donation for new features 🤗</h5>', 
-        unsafe_allow_html=True
-    )
-    button = (
-        '<script type="text/javascript" '
-        'src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" '
-        'data-name="bmc-button" '
-        'data-slug="blazzmocompany" '
-        'data-color="#FFDD00" '
-        'data-emoji="" '
-        'data-font="Cookie" '
-        'data-text="Buy me a coffee" '
-        'data-outline-color="#000000" '
-        'data-font-color="#000000" '
-        'data-coffee-color="#ffffff"></script>'
-    )
-    html(button, height=70, width=220)
-    iframe = (
-        '<style>iframe[width="220"]{position: absolute; top: 50%; left: 50%; '
-        'transform: translate(-50%, -50%); margin:26px 0}</style>'
-    )
-    st.markdown(iframe, unsafe_allow_html=True)
-    add_vertical_space(2)
-    st.write(
-        '<center><h6>Made with ❤️ by <a href="mailto:blazzmo.company@gmail.com">AI-Programming</a></h6>', 
-        unsafe_allow_html=True
-    )
-
 # Display chat messages
 for msg in st.session_state.messages:
     if msg["role"] == "user":
