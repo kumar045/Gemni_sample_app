@@ -21,6 +21,7 @@ def main():
     if api_key:
         interpreter.llm.api_key = api_key
         interpreter.llm.model = "gemini/gemini-1.5-pro"
+        interpreter.auto_run =  True
         
         # Chat interface
         st.subheader("Chat with AI")
