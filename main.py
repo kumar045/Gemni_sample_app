@@ -10,16 +10,17 @@ def initialize_gemini_client(api_key):
     return genai.GenerativeModel(model_name="gemini-1.5-pro-exp-0801")
 
 def generate_component(model, prompt, image=None):
-    """Generate a Tailwind CSS component based on the prompt and/or image."""
+    """Generate a simple CSS component based on the prompt and/or image."""
     chat_session = model.start_chat(history=[])
     
     full_prompt = f"""
-    Create a Tailwind CSS component based on the following description:
+    Create a UI component based on the following description:
     {prompt}
     
-    Please provide the component as a complete HTML structure with inline Tailwind classes.
-    Also include any necessary custom CSS within a <style> tag.
+    Please provide the component as a complete HTML structure with a separate <style> section for CSS.
+    Use simple, clean CSS without any framework dependencies.
     Ensure the component is self-contained and can be rendered directly in a browser.
+    Include comments in the CSS to explain the styling choices.
     """
     
     if image:
@@ -43,7 +44,7 @@ def extract_html_and_css(generated_code):
     return html, css
 
 def main():
-    st.title("Tailwind CSS Component Generator")
+    st.title("Simple CSS Component Generator")
 
     # Input for API key
     api_key = st.text_input("Enter your Google Gemini API Key:", type="password")
