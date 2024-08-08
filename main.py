@@ -1,18 +1,17 @@
 import streamlit as st
 from interpreter import interpreter
-import io
+import google.generativeai as genai
 from PIL import Image
+import io
 
-def setup_interpreter():
-    """Configure Open Interpreter settings."""
-    interpreter.auto_run = True  # Bypass confirmation for code execution
-    interpreter.conversation_history = True  # Enable conversation history
-    # You can add more configuration options here
+def setup_gemini(api_key):
+    """Configure Gemini settings."""
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel('gemini-pro')
+    return model
 
-def generate_react_component(prompt, image=None):
-    """Generate a React component using Open Interpreter."""
-    setup_interpreter()
-    
+def generate_react_component(model, prompt, image=None):
+    """Generate a React component using Gemini."""
     full_prompt = f"""
     Create a React functional component based on the following description:
     {prompt}
@@ -26,17 +25,23 @@ def generate_react_component(prompt, image=None):
     """
     
     if image:
-        full_prompt += "\nIncorporate the uploaded image into the component design if relevant."
+        response = model.generate_content([full_prompt, image])
+    else:
+        response = model.generate_content(full_prompt)
     
-    response = interpreter.chat(full_prompt)
-    return response
+    return response.text
 
 def main():
-    st.title("React Component Generator with Open Interpreter")
+    st.title("React Component Generator with Gemini")
 
-    st.sidebar.markdown("## Configuration")
-    model = st.sidebar.selectbox("Select Model", ["gpt-3.5-turbo", "gpt-4", "claude-2", "command-nightly"])
-    interpreter.model = model
+    # Input for API key
+    api_key = st.sidebar.text_input("Enter your Google AI API Key:", type="password")
+    
+    if not api_key:
+        st.warning("Please enter your Google AI API Key in the sidebar to proceed.")
+        return
+
+    model = setup_gemini(api_key)
 
     # User input options
     input_type = st.radio("Choose input type:", ["Text Prompt", "Image Upload"])
@@ -56,9 +61,9 @@ def main():
                 if input_type == "Image Upload":
                     image_bytes = uploaded_file.getvalue()
                     image = Image.open(io.BytesIO(image_bytes))
-                    result = generate_react_component(prompt, image)
+                    result = generate_react_component(model, prompt, image)
                 else:
-                    result = generate_react_component(prompt)
+                    result = generate_react_component(model, prompt)
 
             # Display the generated code
             st.subheader("Generated React Component:")
