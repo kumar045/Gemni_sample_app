@@ -30,6 +30,7 @@ with st.sidebar:
             st.session_state.Gemini_api_key = st.session_state.widget
             interpreter.api_key = st.session_state.Gemini_api_key
             interpreter.model = "gemini/gemini-1.5-pro"  # Set the Gemini model
+            interpreter.auto_run = True
             # Test API key (this is a placeholder; adjust as needed for Gemini)
             response = interpreter.chat("Hello!")
             if not response:
@@ -87,6 +88,7 @@ if prompt := st.chat_input(placeholder="Write here your message", disabled=not s
 
     # Process AI response
     interpreter.model = "gemini/gemini-1.5-pro"
+    interpreter.auto_run = True
     full_response = ""
     codeb = True
     outputb = False
