@@ -13,17 +13,14 @@ st.set_page_config(
 st.title("💬 Open Interpreter")
 
 # Initialize session state variables if not already present
-if 'Gemini_api_key' not in st.session_state:
-    st.session_state.Gemini_api_key = ''
 if 'messages' not in st.session_state:
     st.session_state['messages'] = []
 
 # Sidebar for API key input
 def submit(api_key):
     try:
-        # Update API key and initialize interpreter
-        st.session_state.Gemini_api_key = api_key
-        interpreter.llm.api_key = st.session_state.Gemini_api_key
+        # Update interpreter with API key and initialize
+        interpreter.llm.api_key = api_key
         interpreter.model = "gemini/gemini-1.5-pro"  # Set the Gemini model
         interpreter.auto_run = True
         
@@ -33,9 +30,9 @@ def submit(api_key):
             raise ValueError("Invalid API key or response error.")
     except Exception as e:
         st.write(e)
-        st.session_state.Gemini_api_key = ''
         st.info("Please enter a valid Gemini API key to continue.")
 
+# Get API key from sidebar
 api_key = st.sidebar.text_input('Gemini API Key', key='widget', type="password")
 if api_key:
     submit(api_key)
@@ -48,12 +45,12 @@ for msg in st.session_state['messages']:
         st.chat_message(msg["role"]).markdown(msg["content"])
 
 # Handle user input
-if prompt := st.chat_input(placeholder="Write here your message", disabled=not st.session_state.Gemini_api_key):
+if prompt := st.chat_input(placeholder="Write here your message", disabled=not api_key):
     st.chat_message("user").text(prompt)
     st.session_state['messages'].append({"role": "user", "content": prompt})
 
     # Process AI response
-    interpreter.llm.model = "gemini/gemini-1.5-pro"
+    interpreter.model = "gemini/gemini-1.5-pro"
     interpreter.auto_run = True
     full_response = ""
     codeb = True
@@ -105,7 +102,7 @@ if prompt := st.chat_input(placeholder="Write here your message", disabled=not s
         st.error(f"An error occurred: {e}")
 
 # Show message if API key is missing
-if not st.session_state.Gemini_api_key:
+if not api_key:
     st.info("👋 Hey, we're happy to see you here 🤗")
     st.info("👉 Please enter your Gemini API key to enable code execution.")
     st.error("👉 This project aims to demonstrate a simple implementation of Open Interpreter.")
