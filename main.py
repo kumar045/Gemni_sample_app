@@ -2,7 +2,6 @@ import streamlit as st
 import google.generativeai as genai
 from PIL import Image
 import io
-import re
 import json
 
 def initialize_gemini_client(api_key):
@@ -19,13 +18,12 @@ def generate_component(model, prompt, image=None):
     {prompt}
     
     Please provide the component as a complete React functional component using hooks if necessary.
-    Use inline styles or a separate styles object for CSS.
-    Ensure the component is self-contained and can be rendered directly.
+    Use inline styles for CSS to ensure the component is fully self-contained.
+    Ensure the component is named 'GeneratedComponent' and can be rendered directly.
     Include comments to explain the component structure and any complex logic.
+    Do not use external libraries or components - stick to basic React and HTML elements.
     
-    Format the response as a JSON object with two keys:
-    1. "component": The full React component code as a string.
-    2. "explanation": A brief explanation of the component's functionality and any notes on usage.
+    Return only the React component code as a string, without any JSON wrapping.
     """
     
     if image:
@@ -33,13 +31,10 @@ def generate_component(model, prompt, image=None):
     else:
         response = chat_session.send_message(full_prompt)
     
-    try:
-        return json.loads(response.text)
-    except json.JSONDecodeError:
-        return {"component": response.text, "explanation": "Unable to parse explanation."}
+    return response.text
 
 def main():
-    st.title("React Component Generator")
+    st.title("React Component Generator with Live Preview")
 
     # Input for API key
     api_key = st.text_input("Enter your Google Gemini API Key:", type="password")
@@ -60,38 +55,33 @@ def main():
                 prompt = st.text_area("Enter additional details or requirements:")
 
         if st.button("Generate Component"):
-            if input_type == "Text Prompt" and prompt:
+            if (input_type == "Text Prompt" and prompt) or (input_type == "Image Upload" and uploaded_file and prompt):
                 with st.spinner("Generating component..."):
-                    result = generate_component(model, prompt)
-            elif input_type == "Image Upload" and uploaded_file and prompt:
-                with st.spinner("Generating component..."):
-                    image_bytes = uploaded_file.getvalue()
-                    image = Image.open(io.BytesIO(image_bytes))
-                    result = generate_component(model, prompt, image)
+                    if input_type == "Image Upload":
+                        image_bytes = uploaded_file.getvalue()
+                        image = Image.open(io.BytesIO(image_bytes))
+                        result = generate_component(model, prompt, image)
+                    else:
+                        result = generate_component(model, prompt)
+
+                # Display the generated code
+                st.subheader("Generated React Component:")
+                st.code(result, language="jsx")
+
+                # Render the React component
+                st.subheader("Live Preview:")
+                st.components.v1.html(f"""
+                    <div id="react-root"></div>
+                    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+                    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+                    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+                    <script type="text/babel">
+                        {result}
+                        ReactDOM.render(<GeneratedComponent />, document.getElementById('react-root'));
+                    </script>
+                """, height=600, scrolling=True)
             else:
                 st.warning("Please provide all required inputs.")
-                return
-
-            # Display the generated code
-            st.subheader("Generated React Component:")
-            st.code(result["component"], language="jsx")
-
-            # Display the explanation
-            st.subheader("Component Explanation:")
-            st.write(result["explanation"])
-
-            # Render the React component
-            st.subheader("Generated UI:")
-            st.components.v1.html(f"""
-                <div id="react-root"></div>
-                <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
-                <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
-                <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-                <script type="text/babel">
-                    {result["component"]}
-                    ReactDOM.render(<Component />, document.getElementById('react-root'));
-                </script>
-            """, height=400, scrolling=True)
 
 if __name__ == "__main__":
     main()
