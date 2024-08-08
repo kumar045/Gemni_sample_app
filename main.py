@@ -19,10 +19,10 @@ if 'messages' not in st.session_state:
     st.session_state['messages'] = []
 
 # Sidebar for API key input
-def submit():
+def submit(api_key):
     try:
         # Update API key and initialize interpreter
-        st.session_state.Gemini_api_key = st.session_state.widget
+        st.session_state.Gemini_api_key = api_key
         interpreter.llm.api_key = st.session_state.Gemini_api_key
         interpreter.model = "gemini/gemini-1.5-pro"  # Set the Gemini model
         interpreter.auto_run = True
@@ -33,12 +33,12 @@ def submit():
             raise ValueError("Invalid API key or response error.")
     except Exception as e:
         st.write(e)
-        st.session_state.widget = ''
         st.session_state.Gemini_api_key = ''
         st.info("Please enter a valid Gemini API key to continue.")
 
-with st.sidebar:
-    st.text_input('Gemini API Key', key='widget', on_change=submit, type="password")
+api_key = st.sidebar.text_input('Gemini API Key', key='widget', type="password")
+if api_key:
+    submit(api_key)
 
 # Display chat messages
 for msg in st.session_state['messages']:
@@ -53,7 +53,7 @@ if prompt := st.chat_input(placeholder="Write here your message", disabled=not s
     st.session_state['messages'].append({"role": "user", "content": prompt})
 
     # Process AI response
-    interpreter.model = "gemini/gemini-1.5-pro"
+    interpreter.llm.model = "gemini/gemini-1.5-pro"
     interpreter.auto_run = True
     full_response = ""
     codeb = True
