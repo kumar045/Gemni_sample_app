@@ -5,29 +5,32 @@ import google.generativeai as genai
 def setup_gemini(api_key):
     """Configure Gemini settings."""
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-pro')
-    return model
+    return genai.GenerativeModel('gemini-pro')
 
 def custom_gemini_model(messages):
     """
     Custom language model function using Gemini.
     This function is compatible with Open Interpreter's expected format.
     """
-    gemini_messages = [
-        {"role": msg["role"], "parts": [msg["content"]]}
-        for msg in messages
-    ]
+    # Convert messages to Gemini format
+    gemini_messages = []
+    for msg in messages:
+        if msg['role'] == 'system':
+            gemini_messages.append({"role": "user", "parts": [msg['content']]})
+        else:
+            gemini_messages.append({"role": msg['role'], "parts": [msg['content']]})
     
-    response = model.generate_content(gemini_messages)
+    response = model.generate_content(gemini_messages, stream=True)
 
     yield {"delta": {"role": "assistant"}}
-    for chunk in response.text:
-        yield {"delta": {"content": chunk}}
+    for chunk in response:
+        if chunk.text:
+            yield {"delta": {"content": chunk.text}}
 
 def initialize_interpreter(model):
     """Initialize Open Interpreter with custom Gemini model."""
-    interpreter.model = "custom"
-    interpreter.custom_llm = custom_gemini_model
+    interpreter.llm.model = "custom"
+    interpreter.llm.custom_llm_provider = custom_gemini_model
     interpreter.auto_run = False  # For safety, require user confirmation
     interpreter.conversation_history = True
     interpreter.chat_history = []
