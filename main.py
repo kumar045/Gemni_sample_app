@@ -29,7 +29,7 @@ def submit(api_key):
         if not response:
             raise ValueError("Invalid API key or response error.")
     except Exception as e:
-        st.write(e)
+        st.error(f"API key test failed: {e}")
         st.info("Please enter a valid Gemini API key to continue.")
 
 # Get API key from sidebar
@@ -99,7 +99,7 @@ if prompt := st.chat_input(placeholder="Write here your message", disabled=not a
         st.session_state['messages'].append({"role": "assistant", "content": full_response})
 
     except Exception as e:
-        st.error(f"An error occurred: {e}")
+        st.error(f"An error occurred while processing your request: {e}")
 
 # Show message if API key is missing
 if not api_key:
