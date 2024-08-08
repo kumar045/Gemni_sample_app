@@ -2,6 +2,7 @@ import streamlit as st
 import google.generativeai as genai
 from PIL import Image
 import io
+import re
 
 def initialize_gemini_client(api_key):
     """Initialize the Google Gemini client with the provided API key."""
@@ -18,6 +19,19 @@ def generate_component(model, prompt, image=None):
         response = chat_session.send_message(prompt)
     
     return response.text
+
+def extract_html_and_css(generated_code):
+    """Extract HTML and CSS from the generated code."""
+    html_pattern = r'<div.*?>([\s\S]*?)<\/div>'
+    css_pattern = r'<style>([\s\S]*?)<\/style>'
+
+    html_match = re.search(html_pattern, generated_code, re.DOTALL)
+    css_match = re.search(css_pattern, generated_code, re.DOTALL)
+
+    html = html_match.group(0) if html_match else ""
+    css = css_match.group(1) if css_match else ""
+
+    return html, css
 
 def main():
     st.title("Tailwind CSS Component Generator")
@@ -44,15 +58,31 @@ def main():
             if input_type == "Text Prompt" and prompt:
                 with st.spinner("Generating component..."):
                     result = generate_component(model, prompt)
-                st.code(result, language="html")
             elif input_type == "Image Upload" and uploaded_file and prompt:
                 with st.spinner("Generating component..."):
                     image_bytes = uploaded_file.getvalue()
                     image = Image.open(io.BytesIO(image_bytes))
                     result = generate_component(model, prompt, image)
-                st.code(result, language="html")
             else:
                 st.warning("Please provide all required inputs.")
+                return
+
+            # Display the generated code
+            st.subheader("Generated Code:")
+            st.code(result, language="html")
+
+            # Extract and display the component
+            html, css = extract_html_and_css(result)
+            if html and css:
+                st.subheader("Generated Component:")
+                st.markdown(f"""
+                    <style>
+                    {css}
+                    </style>
+                    {html}
+                """, unsafe_allow_html=True)
+            else:
+                st.warning("Couldn't extract valid HTML and CSS from the generated code.")
 
 if __name__ == "__main__":
     main()
