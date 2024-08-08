@@ -1,5 +1,5 @@
 import streamlit as st
-import interpreter
+from interpreter import interpreter
 import io
 import sys
 
