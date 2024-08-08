@@ -1,5 +1,5 @@
 import streamlit as st
-import interpreter
+from interpreter import interpreter
 import io
 import sys
 import re
@@ -30,7 +30,7 @@ def main():
     
     if api_key:
         interpreter.llm.api_key = api_key
-        interpreter.llm.model = "gpt-3.5-turbo"
+        interpreter.llm.model = "gemini/gemini-1.5-pro"
         
         # Chat interface
         st.subheader("Chat with AI")
