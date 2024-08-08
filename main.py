@@ -1,5 +1,5 @@
 import streamlit as st
-import interpreter
+from interpreter import interpreter
 
 def main():
     st.title("AI Chat and Code Execution with Open Interpreter")
