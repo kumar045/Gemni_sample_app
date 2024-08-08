@@ -86,7 +86,7 @@ if prompt := st.chat_input(placeholder="Write here your message", disabled=not s
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     # Process AI response
-    interpreter.model = "gemini-pro"
+    interpreter.model = "gemini/gemini-1.5-pro"
     full_response = ""
     codeb = True
     outputb = False
