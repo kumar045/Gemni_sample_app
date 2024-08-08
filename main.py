@@ -3,13 +3,13 @@ from interpreter import interpreter
 import google.generativeai as genai
 
 def setup_gemini(api_key):
-    """Configure Gemini settings."""
+    """Configure Gemini 1.5 Pro settings with code execution."""
     genai.configure(api_key=api_key)
-    return genai.GenerativeModel('gemini-pro')
+    return genai.GenerativeModel(model_name='gemini-1.5-pro', tools='code_execution')
 
 def custom_gemini_model(messages):
     """
-    Custom language model function using Gemini.
+    Custom language model function using Gemini 1.5 Pro with code execution.
     This function is compatible with Open Interpreter's expected format.
     """
     # Convert messages to Gemini format
@@ -26,12 +26,21 @@ def custom_gemini_model(messages):
     for chunk in response:
         if chunk.text:
             yield {"delta": {"content": chunk.text}}
+        if chunk.candidates:
+            for candidate in chunk.candidates:
+                if candidate.content.parts:
+                    for part in candidate.content.parts:
+                        if part.function_call:
+                            yield {"delta": {"content": f"\nFunction Call: {part.function_call.name}\n"}}
+                            yield {"delta": {"content": f"Arguments: {part.function_call.args}\n"}}
+                        elif part.text:
+                            yield {"delta": {"content": part.text}}
 
 def initialize_interpreter(model):
-    """Initialize Open Interpreter with custom Gemini model."""
+    """Initialize Open Interpreter with custom Gemini 1.5 Pro model."""
     interpreter.llm.model = "custom"
     interpreter.llm.custom_llm_provider = custom_gemini_model
-    interpreter.auto_run = False  # For safety, require user confirmation
+    interpreter.auto_run = True  # Enable auto-run for code execution
     interpreter.conversation_history = True
     interpreter.chat_history = []
 
@@ -40,7 +49,7 @@ def chat_with_interpreter(user_input):
     return interpreter.chat(user_input, stream=True, display=False)
 
 def main():
-    st.title("Open Interpreter with Gemini")
+    st.title("Open Interpreter with Gemini 1.5 Pro")
 
     # Sidebar for API key input
     api_key = st.sidebar.text_input("Enter your Google AI API Key:", type="password")
