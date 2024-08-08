@@ -1,46 +1,45 @@
 import streamlit as st
 from interpreter import interpreter
-import google.generativeai as genai
+from litellm import completion
+import os
 
-def setup_gemini(api_key):
-    """Configure Gemini 1.5 Pro settings with code execution."""
-    genai.configure(api_key=api_key)
-    return genai.GenerativeModel(model_name='gemini-1.5-pro', tools='code_execution')
+def check_api_key(api_key):
+    """Check if the API key is available."""
+    if not api_key:
+        st.error("Please enter your Gemini API Key in the sidebar.")
+        st.stop()
+    os.environ['GEMINI_API_KEY'] = api_key
+
+def chat_with_gemini(prompt):
+    """Generate a response from the Gemini model based on a given prompt."""
+    response = completion(
+        model="gemini/gemini-pro",
+        messages=[{"role": "user", "content": prompt}],
+    )
+    if response and response.choices:
+        return response.choices[0].message.content
+    else:
+        return "No response from the model"
 
 def custom_gemini_model(messages):
     """
-    Custom language model function using Gemini 1.5 Pro with code execution.
+    Custom language model function using Gemini Pro via LiteLLM.
     This function is compatible with Open Interpreter's expected format.
     """
-    # Convert messages to Gemini format
-    gemini_messages = []
-    for msg in messages:
-        if msg['role'] == 'system':
-            gemini_messages.append({"role": "user", "parts": [msg['content']]})
-        else:
-            gemini_messages.append({"role": msg['role'], "parts": [msg['content']]})
+    # Combine all messages into a single prompt
+    full_prompt = "\n".join([f"{msg['role']}: {msg['content']}" for msg in messages])
     
-    response = model.generate_content(gemini_messages, stream=True)
-
+    response = chat_with_gemini(full_prompt)
+    
     yield {"delta": {"role": "assistant"}}
     for chunk in response:
-        if chunk.text:
-            yield {"delta": {"content": chunk.text}}
-        if chunk.candidates:
-            for candidate in chunk.candidates:
-                if candidate.content.parts:
-                    for part in candidate.content.parts:
-                        if part.function_call:
-                            yield {"delta": {"content": f"\nFunction Call: {part.function_call.name}\n"}}
-                            yield {"delta": {"content": f"Arguments: {part.function_call.args}\n"}}
-                        elif part.text:
-                            yield {"delta": {"content": part.text}}
+        yield {"delta": {"content": chunk}}
 
-def initialize_interpreter(model):
-    """Initialize Open Interpreter with custom Gemini 1.5 Pro model."""
+def initialize_interpreter():
+    """Initialize Open Interpreter with custom Gemini model."""
     interpreter.llm.model = "custom"
     interpreter.llm.custom_llm_provider = custom_gemini_model
-    interpreter.auto_run = True  # Enable auto-run for code execution
+    interpreter.auto_run = False  # For safety, require user confirmation
     interpreter.conversation_history = True
     interpreter.chat_history = []
 
@@ -49,19 +48,14 @@ def chat_with_interpreter(user_input):
     return interpreter.chat(user_input, stream=True, display=False)
 
 def main():
-    st.title("Open Interpreter with Gemini 1.5 Pro")
+    st.title("Open Interpreter with Gemini Pro (via LiteLLM)")
 
     # Sidebar for API key input
-    api_key = st.sidebar.text_input("Enter your Google AI API Key:", type="password")
-    
-    if not api_key:
-        st.warning("Please enter your Google AI API Key in the sidebar to start chatting.")
-        return
+    api_key = st.sidebar.text_input("Enter your Gemini API Key:", type="password")
+    check_api_key(api_key)
 
-    # Initialize Gemini and Open Interpreter
-    global model
-    model = setup_gemini(api_key)
-    initialize_interpreter(model)
+    # Initialize Open Interpreter
+    initialize_interpreter()
 
     # Initialize chat history
     if "messages" not in st.session_state:
