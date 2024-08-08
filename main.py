@@ -10,6 +10,7 @@ def main():
     if api_key:
         interpreter.llm.api_key = api_key
         interpreter.llm.model = "gemini/gemini-1.5-pro"
+        interpreter.auto_run = True
         
         # Chat interface
         st.subheader("Chat with AI")
@@ -24,14 +25,6 @@ def main():
                     # Display AI response
                     st.write("AI Response:")
                     st.write(response)
-                    
-                    # Check if there's any code to execute
-                    if interpreter.computer.last_code:
-                        st.subheader("Executed Code:")
-                        st.code(interpreter.computer.last_code)
-                        
-                        st.subheader("Code Output:")
-                        st.write(interpreter.computer.last_output)
             else:
                 st.warning("Please enter a message.")
     else:
