@@ -36,6 +36,7 @@ def main():
     
     if api_key:
         interpreter.llm.api_key = api_key
+        interpreter.auto_run = True
         interpreter.llm.model = "gemini/gemini-1.5-flash"  # Use Gemini Pro model
         
         # Chat interface
