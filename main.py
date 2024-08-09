@@ -1,9 +1,9 @@
-
 import streamlit as st
 from interpreter import interpreter
 import io
 import sys
 import re
+from litellm import InternalServerError
 
 def capture_output(func):
     old_stdout = sys.stdout
@@ -30,7 +30,7 @@ def extract_and_execute_code(text):
 
 def main():
     st.title("AI Chat and Code Execution with Open Interpreter")
-
+    
     # Input for API Key
     api_key = st.text_input("Enter your Google AI Studio API Key:", type="password")
     
@@ -45,23 +45,29 @@ def main():
         
         if st.button("Send"):
             if user_input:
-                with st.spinner("AI is thinking..."):
-                    # Get AI response
-                    response = interpreter.chat(user_input)
-                    
-                    # Display AI response
-                    st.write("AI Response:")
-                    st.write(response)
-                    
-                    # Extract, execute, and display code and its output
-                    code_blocks, outputs = extract_and_execute_code(response)
-                    
-                    if code_blocks:
-                        for i, (code, output) in enumerate(zip(code_blocks, outputs)):
-                            st.subheader(f"Code Block {i+1}:")
-                            st.code(code, language="python")
-                            st.subheader(f"Output {i+1}:")
-                            st.code(output)
+                try:
+                    with st.spinner("AI is thinking..."):
+                        # Get AI response
+                        response = interpreter.chat(user_input)
+                        
+                        # Display AI response
+                        st.write("AI Response:")
+                        st.write(response)
+                        
+                        # Extract, execute, and display code and its output
+                        code_blocks, outputs = extract_and_execute_code(response)
+                        
+                        if code_blocks:
+                            for i, (code, output) in enumerate(zip(code_blocks, outputs)):
+                                st.subheader(f"Code Block {i+1}:")
+                                st.code(code, language="python")
+                                st.subheader(f"Output {i+1}:")
+                                st.code(output)
+                except InternalServerError as e:
+                    st.error(f"An internal server error occurred: {str(e)}")
+                    st.info("This might be a temporary issue with the Vertex AI service. Please try again later or consider using a different model.")
+                except Exception as e:
+                    st.error(f"An error occurred: {str(e)}")
             else:
                 st.warning("Please enter a message.")
     else:
