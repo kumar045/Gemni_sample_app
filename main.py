@@ -36,7 +36,7 @@ def main():
     
     if api_key:
         interpreter.llm.api_key = api_key
-        interpreter.llm.model = "gemini-pro"  # Use Gemini Pro model
+        interpreter.llm.model = "gemini/gemini-1.5-flash"  # Use Gemini Pro model
         
         # Chat interface
         st.subheader("Chat with AI")
