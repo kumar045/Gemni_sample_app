@@ -1,3 +1,4 @@
+import streamlit as st
 from interpreter import interpreter
 import io
 import sys
@@ -27,46 +28,43 @@ def extract_and_execute_code(text):
     return code_blocks, outputs
 
 def main():
-    print("AI Chat and Code Execution with Open Interpreter")
+    st.title("AI Chat and Code Execution with Open Interpreter")
     
     # Input for API Key
-    api_key = input("Enter your Google AI Studio API Key: ")
+    api_key = st.text_input("Enter your Google AI Studio API Key:", type="password")
     
     if api_key:
         interpreter.llm.api_key = api_key
         interpreter.auto_run = True
         interpreter.llm.model = "gemini/gemini-1.5-flash"  # Use Gemini Pro model
         
-        while True:
-            # Chat interface
-            print("\nChat with AI")
-            user_input = input("Enter your message (or 'quit' to exit): ")
-            
-            if user_input.lower() == 'quit':
-                break
-            
+        # Chat interface
+        st.subheader("Chat with AI")
+        user_input = st.text_area("Enter your message:")
+        
+        if st.button("Send"):
             if user_input:
-                print("AI is thinking...")
-                # Get AI response
-                response = interpreter.chat(user_input)
-                
-                # Display AI response
-                print("AI Response:")
-                print(response)
-                
-                # Extract, execute, and display code and its output
-                code_blocks, outputs = extract_and_execute_code(response)
-                
-                if code_blocks:
-                    for i, (code, output) in enumerate(zip(code_blocks, outputs)):
-                        print(f"\nCode Block {i+1}:")
-                        print(code)
-                        print(f"\nOutput {i+1}:")
-                        print(output)
+                with st.spinner("AI is thinking..."):
+                    # Get AI response
+                    response = interpreter.chat(user_input)
+                    
+                    # Display AI response
+                    st.write("AI Response:")
+                    st.write(response)
+                    
+                    # Extract, execute, and display code and its output
+                    code_blocks, outputs = extract_and_execute_code(response)
+                    
+                    if code_blocks:
+                        for i, (code, output) in enumerate(zip(code_blocks, outputs)):
+                            st.subheader(f"Code Block {i+1}:")
+                            st.code(code, language="python")
+                            st.subheader(f"Output {i+1}:")
+                            st.code(output)
             else:
-                print("Please enter a message.")
+                st.warning("Please enter a message.")
     else:
-        print("Please enter your Google AI Studio API Key to start.")
+        st.warning("Please enter your Google AI Studio API Key to start.")
 
 if __name__ == "__main__":
     main()
