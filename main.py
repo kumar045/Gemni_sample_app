@@ -35,8 +35,8 @@ def main():
     api_key = st.text_input("Enter your Google AI Studio API Key:", type="password")
     
     if api_key:
-        interpreter.api_key = api_key
-        interpreter.model = "gemini-pro"  # Use Gemini Pro model
+        interpreter.llm.api_key = api_key
+        interpreter.llm.model = "gemini-pro"  # Use Gemini Pro model
         
         # Chat interface
         st.subheader("Chat with AI")
