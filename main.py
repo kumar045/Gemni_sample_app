@@ -1,3 +1,4 @@
+
 import streamlit as st
 from interpreter import interpreter
 import io
@@ -29,7 +30,7 @@ def extract_and_execute_code(text):
 
 def main():
     st.title("AI Chat and Code Execution with Open Interpreter")
-    
+
     # Input for API Key
     api_key = st.text_input("Enter your Google AI Studio API Key:", type="password")
     
