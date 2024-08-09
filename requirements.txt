@@ -2,4 +2,3 @@ streamlit
 google-generativeai
 Pillow==10.2.0
 open-interpreter
-streamlit-extras
